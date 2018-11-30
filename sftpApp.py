@@ -254,6 +254,7 @@ class sftpUI(QWidget):
                 buckets.append(bucket.name)
             # print first bucket in list, debugging purposes
             print(buckets[0])
+            upload_bucket = buckets[0]
         except botocore.exceptions.ClientError as e:
             # Cast error to a string so we can look for the reason behind the error
             error_message = str(e)
@@ -272,8 +273,11 @@ class sftpUI(QWidget):
             print(e)
         # Open window to select file
         files_to_upload = QFileDialog.getOpenFileName(self, 'Open file', MAC_BROWSER_LOCATION)
+        # Maybe put this in a list and for loop?
         if files_to_upload[0]:
             files = files_to_upload[0]
+            s3.meta.client.upload_file(files, upload_bucket, files)
+
         print(files)
         
 
