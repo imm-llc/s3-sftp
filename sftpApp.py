@@ -5,10 +5,10 @@ A wrapper for the S3 API
 Regretful Developer: Mitch Anderson
 
 Virtualenv steps: python3 -m virtualenv <Virtual env name>
-In virtualenv : pip3 install boto3; pip3 install pyqt5
+In virtualenv : pip3 install boto3; pip3 install pyqt5; pip3 install botocore; pip3 install ntpath
 
 """
-import boto3, PyQt5, sys, os, json, getpass, botocore
+import boto3, PyQt5, sys, os, json, getpass, botocore, ntpath
 from botocore import *
 
 from PyQt5 import QtWidgets, QtGui
@@ -48,11 +48,10 @@ class sftpUI(QWidget):
 
     def UI(self):
             # Check if credential file exists
-            creds_file_exists = os.path.isfile(KEYS_FILE)
-            # credentials exist, go to main screen
-            if creds_file_exists:
+            CREDS_FILE_EXISTS = os.path.isfile(KEYS_FILE)
+            # credentials exist, go to main screen, we'll verify that they work later
+            if CREDS_FILE_EXISTS:
                 with open(KEYS_FILE, "r") as KF:
-                    #KF_LINES = KF.readlines()
                     KF_LINES = KF.read().splitlines()
                     # Add these variables to the sftpUI class
                     self.s3_access_key = KF_LINES[0]
@@ -105,24 +104,7 @@ class sftpUI(QWidget):
             clear_credentials.clicked.connect(self.clearCredentials)
             clear_credentials.resize(clear_credentials.sizeHint())
             clear_credentials.move(150, 300)
-            """
-            # Check if credential file exists
-            creds_file_exists = os.path.isfile(KEYS_FILE)
-            # credentials exist, go to main screen
-            if creds_file_exists:
-                with open(KEYS_FILE, "r") as KF:
-                    KF_LINES = KF.readlines()
-                    s3_access_key = KF_LINES[0]
-                    s3_secret_key = KF_LINES[1]
-                    s3_region = KF_LINES[2]
-                    KF.close()
-                pass
-            # Credentials don't exist, go to pop up for access key
-            else:
-                #print("no creds")
-                self.GetAccessKey()
-            """
-           
+          
             """
 
             # Define main window
@@ -168,13 +150,17 @@ class sftpUI(QWidget):
             self.setWindowIcon(QIcon(APP_ICON))
             """
             
-            # Run it
+            # Not working yet
+            
             #BACKGROUND = QImage(APP_ICON)
             #scaled_image = BACKGROUND.scaled(QSize(138, 177))
             #palette = QPalette()
             #palette.setBrush(1, QBrush(scaled_image))
             #self.setPalette(palette)
+
+            # Generate layout
             self.layout()
+            # Run it
             self.show()
 
     def ConfirmQuit(self):
@@ -223,7 +209,7 @@ class sftpUI(QWidget):
                 KF.close()
                 # We're ok to move to UI now, we have Access, Secret, and Region
                 self.UI()
-        # They've already cancelled access, let's quit this pop up
+        # They've already cancelled access, let's quit this pop up. We'll error out later but we'll catch it
         elif not okPressed:
             QApplication.instance().quit
         else:
@@ -242,11 +228,11 @@ class sftpUI(QWidget):
         
         try:
             # Try to connect and list buckets.
-            # resource lists things
+            
             s3 = boto3.resource('s3', aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key, region_name=self.s3_region)
-            # client does actions
+            # might be able to ditch client
             client = boto3.client('s3', aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key, region_name=self.s3_region)
-            #response = client.list_buckets()
+            
             # Create list for buckets -- this should create a drop down list
             buckets = []
             for bucket in s3.buckets.all():
@@ -254,31 +240,39 @@ class sftpUI(QWidget):
                 buckets.append(bucket.name)
             # print first bucket in list, debugging purposes
             print(buckets[0])
-            upload_bucket = buckets[0]
+            UPLOAD_BUCKET = buckets[0]
         except botocore.exceptions.ClientError as e:
             # Cast error to a string so we can look for the reason behind the error
-            error_message = str(e)
-            if "InvalidAccessKeyId" in error_message:
+            ERROR_MESSAGE = str(e)
+            if "InvalidAccessKeyId" in ERROR_MESSAGE:
                 # Need to get this into widget/alarm
                 print("Invalid Access Key")
-            elif "SignatureDoesNotMatch" in error_message:
+            elif "SignatureDoesNotMatch" in ERROR_MESSAGE:
                 print("Invalid Secret Key")
+            else:
+                print("Unknown error")
 
         except botocore.exceptions.EndpointConnectionError as e:
-            # Need to get this into a widget
+            # Need to get this into a widget/alarm
             print("Invalid Region")
  
         except Exception as e:
             # Catch all
             print(e)
         # Open window to select file
-        files_to_upload = QFileDialog.getOpenFileName(self, 'Open file', MAC_BROWSER_LOCATION)
+        FILES_TO_UPLOAD = QFileDialog.getOpenFileName(self, 'Open file', MAC_BROWSER_LOCATION)
         # Maybe put this in a list and for loop?
-        if files_to_upload[0]:
-            files = files_to_upload[0]
-            s3.meta.client.upload_file(files, upload_bucket, files)
-
-        print(files)
+        if FILES_TO_UPLOAD[0]:
+            FILES = FILES_TO_UPLOAD[0]
+            # haven't tried this yet
+            #for FULL_FILE in FILES:
+                # PATH, FILE = ntpath.split(FILES)
+                # s3.meta.client.upload_file(FILES, UPLOAD_BUCKET, FILE)
+            PATH, FILE = ntpath.split(FILES)
+            print(FILE)
+            
+            # Commented for debugging ntpath, also need to move this into for loop once that's working
+            #s3.meta.client.upload_file(FILES, UPLOAD_BUCKET, FILE)
         
 
 
