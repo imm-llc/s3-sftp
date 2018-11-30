@@ -242,13 +242,18 @@ class sftpUI(QWidget):
         
         try:
             # Try to connect and list buckets.
-            # resource lists
+            # resource lists things
             s3 = boto3.resource('s3', aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key, region_name=self.s3_region)
             # client does actions
             client = boto3.client('s3', aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key, region_name=self.s3_region)
             #response = client.list_buckets()
+            # Create list for buckets -- this should create a drop down list
+            buckets = []
             for bucket in s3.buckets.all():
-                print(bucket.name)
+                # Put existing buckets in list
+                buckets.append(bucket.name)
+            # print first bucket in list, debugging purposes
+            print(buckets[0])
         except botocore.exceptions.ClientError as e:
             # Cast error to a string so we can look for the reason behind the error
             error_message = str(e)
@@ -265,41 +270,26 @@ class sftpUI(QWidget):
         except Exception as e:
             # Catch all
             print(e)
-
+        # Open window to select file
         files_to_upload = QFileDialog.getOpenFileName(self, 'Open file', MAC_BROWSER_LOCATION)
         if files_to_upload[0]:
-        #    files = files_to_upload[0]
-        #print(files)
+            files = files_to_upload[0]
+        print(files)
         
-        """
-        bad access:
-        An error occurred (InvalidAccessKeyId) when calling the ListBuckets operation: The request signature we calculated does not match the signature you provided. Check your key and signing method.
-        bad secret: 
-        An error occurred (SignatureDoesNotMatch) when calling the ListBuckets operation: The request signature we calculated does not match the signature you provided. Check your key and signing method.
 
-        bad region: 
-        botocore.exceptions.EndpointConnectionError: Could not connect to the endpoint URL: "https://s3.us-est-1.amazonaws.com/"
-        """
-        
-        #client = boto3.client('s3', aws_access_key_id=ACCESS, aws_secret_access_key=SECRET, region_name=REGION)
-
-
-    
-"""
-class s3Upload(boto3, QMainWindow, QWidget):
-
-    def __init__(self):
-        # Inherit from class
-        super().__init__()
-        # Move on to upload function
-        self.uploader()
-    
-    def uploader(self):
-        print("Uploading")
-"""
 
 if __name__ == '__main__':
     
     app = QApplication(sys.argv)
     ex = sftpUI()
     sys.exit(app.exec_())
+
+"""
+bad access:
+An error occurred (InvalidAccessKeyId) when calling the ListBuckets operation: The request signature we calculated does not match the signature you provided. Check your key and signing method.
+bad secret: 
+An error occurred (SignatureDoesNotMatch) when calling the ListBuckets operation: The request signature we calculated does not match the signature you provided. Check your key and signing method.
+
+bad region: 
+botocore.exceptions.EndpointConnectionError: Could not connect to the endpoint URL: "https://s3.us-est-1.amazonaws.com/"
+"""
