@@ -8,17 +8,19 @@ Virtualenv steps: python3 -m virtualenv <Virtual env name>
 In virtualenv : pip3 install boto3; pip3 install pyqt5; pip3 install botocore; pip3 install ntpath
 
 """
-import boto3, PyQt5, sys, os, json, getpass, botocore, ntpath, urllib3
+import boto3, PyQt5, sys, os, json, getpass, botocore, ntpath, urllib3, platform
 from botocore import *
 
 from PyQt5 import QtWidgets, QtGui
+# Need to narrow this down
 from PyQt5.QtWidgets import (QApplication, QLabel, QWidget, QPushButton, QToolTip, QMessageBox, QInputDialog, QDesktopWidget, QMainWindow, QStatusBar, 
     QLineEdit, QTextEdit, QGridLayout, QHBoxLayout, QFrame, QSplitter, QStyleFactory, QFileDialog, QAction)
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon, QFont, QImage, QPalette, QBrush
 
-KEYS_FILE = "key_secret.py"
+
 APP_ICON = "include/bhi.png"
+
 # Set these here so we can change for different business units
 WINDOW_TITLE = "BHI SFTP"
 ERR_WINDOW_TITLE = "Credential Error"
@@ -34,11 +36,27 @@ USER = getpass.getuser()
 MAC_LOCATION = "/Users/{}/.bhi/".format(USER)
 WIN_LOCATION = "C:\\Users\\{}\\.bhi\\".format(USER)
 LINUX_LOCATION = "/home/{}/.bhi/".format(USER)
-#KEYS_FILE = os.path.join(xxx_LOCATION, "key_secret.py")
 
 # Default file browser location
 MAC_BROWSER_LOCATION = "/Users/{}/Downloads/".format(USER)
-#class sftpUI(QMainWindow, QWidget):
+WIN_BROWSER_LOCATION = "C:/Users/{}/Downloads".format(USER)
+LINUX_BROWSER_LOCATION = "/home/{}/Downloads".format(USER)
+
+# What OS are we on?
+OS_TYPE = platform.system()
+if OS_TYPE == "Darwin":
+    BHI_LOCATION = MAC_LOCATION
+    DEFAULT_BROWSER_LOCATION = MAC_BROWSER_LOCATION
+
+elif OS_TYPE == "Windows":
+    BHI_LOCATION = WIN_LOCATION
+    DEFAULT_BROWSER_LOCATION = WIN_BROWSER_LOCATION
+else:
+    BHI_LOCATION = LINUX_LOCATION
+    DEFAULT_BROWSER_LOCATION = LINUX_BROWSER_LOCATION
+
+KEYS_FILE = os.path.join(BHI_LOCATION, "key_secret.py")
+
 class sftpUI(QWidget):
     def __init__(self):
         # Inherit from class
@@ -49,6 +67,12 @@ class sftpUI(QWidget):
 
 
     def UI(self):
+            # Check if credentials directory exists
+            BHI_DIR_EXISTS = os.path.isdir(BHI_LOCATION)
+            if not BHI_DIR_EXISTS:
+                os.mkdir(BHI_LOCATION)
+            else:
+                pass
             # Check if credential file exists
             CREDS_FILE_EXISTS = os.path.isfile(KEYS_FILE)
             # credentials exist, go to main screen, we'll verify that they work later
@@ -80,33 +104,33 @@ class sftpUI(QWidget):
             self.setToolTip(MAIN_TOOLTIP)
                        
             # Create quit button
-            quit_button = QPushButton('Quit', self)
+            QUIT_BUTTON = QPushButton('Quit', self)
             # Quit button tooltip definition
-            quit_button.setToolTip(QUIT_TOOLTIP)
+            QUIT_BUTTON.setToolTip(QUIT_TOOLTIP)
             # Jump to confirming they want to quit
-            quit_button.clicked.connect(self.ConfirmQuit)
-            quit_button.resize(quit_button.sizeHint())
-            quit_button.move(1, 300)
+            QUIT_BUTTON.clicked.connect(self.ConfirmQuit)
+            QUIT_BUTTON.resize(QUIT_BUTTON.sizeHint())
+            QUIT_BUTTON.move(1, 300)
 
              # Create upload button
-            upload_button = QPushButton('Upload', self)
+            UPLOAD_BUTTON = QPushButton('Upload', self)
             # Create tooltip for upload_button
-            upload_button.setToolTip(UPLOAD_TOOLTIP)
+            UPLOAD_BUTTON.setToolTip(UPLOAD_TOOLTIP)
             # Set recommended button size
-            upload_button.resize(upload_button.sizeHint())
-            upload_button.move(350, 300)
+            UPLOAD_BUTTON.resize(UPLOAD_BUTTON.sizeHint())
+            UPLOAD_BUTTON.move(350, 300)
             # Call function
-            upload_button.clicked.connect(self.uploadS3)
+            UPLOAD_BUTTON.clicked.connect(self.uploadS3)
             
             #self.statusBar().showMessage('Ready')
 
             # Create clear credentials button
-            clear_credentials = QPushButton('Clear Credentials', self)
-            clear_credentials.setToolTip(CLEAR_CREDS_TOOLTIP)
+            CLEAR_CREDENTIALS = QPushButton('Clear Credentials', self)
+            CLEAR_CREDENTIALS.setToolTip(CLEAR_CREDS_TOOLTIP)
             # Jump to confirming they want to quit
-            clear_credentials.clicked.connect(self.clearCredentials)
-            clear_credentials.resize(clear_credentials.sizeHint())
-            clear_credentials.move(150, 300)
+            CLEAR_CREDENTIALS.clicked.connect(self.clearCredentials)
+            CLEAR_CREDENTIALS.resize(CLEAR_CREDENTIALS.sizeHint())
+            CLEAR_CREDENTIALS.move(150, 300)
             
             # Not working yet
 
@@ -246,7 +270,7 @@ class sftpUI(QWidget):
     def fileSelector(self, s3):
         UPLOAD_BUCKET = self.UPLOAD_BUCKET
         # Open window to select file, grab item at 0 index so we don't include filter
-        FILES_TO_UPLOAD = QFileDialog.getOpenFileNames(self, 'Open file', MAC_BROWSER_LOCATION)[0]
+        FILES_TO_UPLOAD = QFileDialog.getOpenFileNames(self, 'Open file', DEFAULT_BROWSER_LOCATION)[0]
 
         if FILES_TO_UPLOAD:
             COUNT = len(FILES_TO_UPLOAD)
@@ -256,54 +280,52 @@ class sftpUI(QWidget):
                 FILE_PLURAL = "files"
             for FILE in FILES_TO_UPLOAD:
                 # Can comment out if not debugging
-                print("DEBUG MODE: NOT UPLOADING")
+                #print("DEBUG MODE: NOT UPLOADING")
                 # Can comment out if not debugging
-                print("Full Path: {}".format(str(FILE)))
+                #print("Full Path: {}".format(str(FILE)))
                 ### Do not comment out
                 PATH, FILE_NAME = ntpath.split(str(FILE))
                 # Can comment out if not debugging
-                print("Uploading: {} to {}".format(FILE_NAME, UPLOAD_BUCKET))
+                #print("Uploading: {} to {}".format(FILE_NAME, UPLOAD_BUCKET))
 
-                # Uncomment following line to enable uploading
-                
                 #s3.meta.client.upload_file(FILE, UPLOAD_BUCKET, FILE_NAME)
                 # Can comment out if not debugging
-                ALERT_SUCCESS = QMessageBox()
+                #ALERT_SUCCESS = QMessageBox()
                 # Can comment out if not debugging
-                ALERT_SUCCESS.setIcon(QMessageBox.Information)
+                #ALERT_SUCCESS.setIcon(QMessageBox.Information)
                 # Can comment out if not debugging
-                ALERT_SUCCESS.setText("Successfully uploaded {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
+                #ALERT_SUCCESS.setText("Successfully uploaded {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
                 # Can comment out if not debugging
-                ALERT_SUCCESS.setWindowTitle(WINDOW_TITLE)
+                #ALERT_SUCCESS.setWindowTitle(WINDOW_TITLE)
                 # Can comment out if not debugging
-                ALERT_SUCCESS.setStandardButtons(QMessageBox.Ok)
+                #ALERT_SUCCESS.setStandardButtons(QMessageBox.Ok)
                 # Can comment out if not debugging
-                ALERT_SUCCESS.exec_()
+                #ALERT_SUCCESS.exec_()
         
                 # Commented for debugging/non-prod
                 # Call s3 to upload file; parameters = Local file, Bucket to upload to, destination name
                 # We want destination file name to be _just_ the filename itself, otherwise you're creating a nasty path in S3
-                #try:
+                try:
                     ########################## (Local file, Bucket to upload to, destination name)
-                    #s3.meta.client.upload_file(FILE, UPLOAD_BUCKET, FILE_NAME)
+                    s3.meta.client.upload_file(FILE, UPLOAD_BUCKET, FILE_NAME)
                     # Build success alert message 
-                    #ALERT_SUCCESS = QMessageBox()
-                    #ALERT_SUCCESS.setIcon(QMessageBox.Information)
-                    #ALERT_SUCCESS.setText("Successfully uploaded {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
-                    #ALERT_SUCCESS.setWindowTitle(WINDOW_TITLE)
-                    #ALERT_SUCCESS.setStandardButtons(QMessageBox.Ok)
-                    #ALERT_SUCCESS.exec_()
+                    ALERT_SUCCESS = QMessageBox()
+                    ALERT_SUCCESS.setIcon(QMessageBox.Information)
+                    ALERT_SUCCESS.setText("Successfully uploaded {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
+                    ALERT_SUCCESS.setWindowTitle(WINDOW_TITLE)
+                    ALERT_SUCCESS.setStandardButtons(QMessageBox.Ok)
+                    ALERT_SUCCESS.exec_()
                 # Generic exception, not sure what errors will be thrown here
-                # except Exception as e:
-                    # FULL_ERROR = str(e)
-                    #ALERT_FAIL = QMessageBox()
-                    #ALERT_FAIL.setIcon(QMessageBox.Critical)
-                    #ALERT_FAIL.setInformativeText("Click 'Show Details...' for full error")
-                    #ALERT_FAIL.setDetailedText(FULL_ERROR)
-                    #ALERT_FAIL.setText("Failed to upload {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
-                    #ALERT_FAIL.setWindowTitle(WINDOW_TITLE)
-                    #ALERT_FAIL.setStandardButtons(QMessageBox.Ok)
-                    #ALERT_FAIL.exec_()
+                except Exception as e:
+                    FULL_ERROR = str(e)
+                    ALERT_FAIL = QMessageBox()
+                    ALERT_FAIL.setIcon(QMessageBox.Critical)
+                    ALERT_FAIL.setInformativeText("Click 'Show Details...' for full error")
+                    ALERT_FAIL.setDetailedText(FULL_ERROR)
+                    ALERT_FAIL.setText("Failed to upload {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
+                    ALERT_FAIL.setWindowTitle(WINDOW_TITLE)
+                    ALERT_FAIL.setStandardButtons(QMessageBox.Ok)
+                    ALERT_FAIL.exec_()
     def badCredentialsError(self):
 
         # Build credential error message 
