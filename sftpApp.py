@@ -63,8 +63,6 @@ class sftpUI(QWidget):
         super().__init__()
         # Let the UI function do the heavy lifting
         self.UI()
-        #self.GetCredentials()
-
 
     def UI(self):
             # Check if credentials directory exists
@@ -87,7 +85,6 @@ class sftpUI(QWidget):
                 pass
             # Credentials don't exist, go to pop up for access key
             else:
-                #print("no creds")
                 self.GetAccessKey()
             
 
@@ -103,10 +100,10 @@ class sftpUI(QWidget):
             QUIT_BUTTON.setShortcut("Ctrl+Q")
             # Quit button tooltip definition
             QUIT_BUTTON.setToolTip(QUIT_TOOLTIP)
+            QUIT_BUTTON.resize(QUIT_BUTTON.sizeHint())
             # Jump to confirming they want to quit
             QUIT_BUTTON.clicked.connect(self.ConfirmQuit)
-            QUIT_BUTTON.resize(QUIT_BUTTON.sizeHint())
-            #QUIT_BUTTON.move(1, 300)
+            
 
              # Create upload button
             UPLOAD_BUTTON = QPushButton('Upload', self)
@@ -124,9 +121,11 @@ class sftpUI(QWidget):
             CLEAR_CREDENTIALS = QPushButton('Clear Credentials', self)
             CLEAR_CREDENTIALS.setShortcut("Ctrl+D")
             CLEAR_CREDENTIALS.setToolTip(CLEAR_CREDS_TOOLTIP)
+            CLEAR_CREDENTIALS.resize(CLEAR_CREDENTIALS.sizeHint())
+
             # Jump to confirming they want to quit
             CLEAR_CREDENTIALS.clicked.connect(self.clearCredentials)
-            CLEAR_CREDENTIALS.resize(CLEAR_CREDENTIALS.sizeHint())
+            
 
             # Define main window size and location
             GRID_WINDOW = QGridLayout()
