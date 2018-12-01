@@ -4,9 +4,6 @@ A wrapper for the S3 API
 
 Regretful Developer: Mitch Anderson
 
-Virtualenv steps: python3 -m virtualenv <Virtual env name>
-In virtualenv : pip3 install boto3; pip3 install pyqt5; pip3 install botocore; pip3 install ntpath
-
 """
 import boto3, PyQt5, sys, os, json, getpass, botocore, ntpath, urllib3, platform
 from botocore import *
