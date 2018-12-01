@@ -90,13 +90,8 @@ class sftpUI(QWidget):
                 #print("no creds")
                 self.GetAccessKey()
             
-            # Define main window size and location
-            self.setGeometry(300, 300, 450, 350)
-            # Set Window Title
-            self.setWindowTitle(WINDOW_TITLE)
-            # Set Tray icon
-            self.setWindowIcon(QIcon(APP_ICON))
-            # Create boxes
+
+            # Start creating buttons
 
             # Set tooltip font
             QToolTip.setFont(QFont('SansSerif', 10))
@@ -111,7 +106,7 @@ class sftpUI(QWidget):
             # Jump to confirming they want to quit
             QUIT_BUTTON.clicked.connect(self.ConfirmQuit)
             QUIT_BUTTON.resize(QUIT_BUTTON.sizeHint())
-            QUIT_BUTTON.move(1, 300)
+            #QUIT_BUTTON.move(1, 300)
 
              # Create upload button
             UPLOAD_BUTTON = QPushButton('Upload', self)
@@ -120,11 +115,10 @@ class sftpUI(QWidget):
             UPLOAD_BUTTON.setToolTip(UPLOAD_TOOLTIP)
             # Set recommended button size
             UPLOAD_BUTTON.resize(UPLOAD_BUTTON.sizeHint())
-            UPLOAD_BUTTON.move(350, 300)
-            # Call function
+
+            # Call function when Upload clicked
             UPLOAD_BUTTON.clicked.connect(self.uploadS3)
             
-            #self.statusBar().showMessage('Ready')
 
             # Create clear credentials button
             CLEAR_CREDENTIALS = QPushButton('Clear Credentials', self)
@@ -133,7 +127,14 @@ class sftpUI(QWidget):
             # Jump to confirming they want to quit
             CLEAR_CREDENTIALS.clicked.connect(self.clearCredentials)
             CLEAR_CREDENTIALS.resize(CLEAR_CREDENTIALS.sizeHint())
-            CLEAR_CREDENTIALS.move(150, 300)
+
+            # Define main window size and location
+            GRID_WINDOW = QGridLayout()
+            self.setLayout(GRID_WINDOW)
+            # Set Window Title
+            self.setWindowTitle(WINDOW_TITLE)
+            # Set Tray icon
+            self.setWindowIcon(QIcon(APP_ICON))
             
             # Not working yet
 
@@ -142,10 +143,21 @@ class sftpUI(QWidget):
             #palette = QPalette()
             #palette.setBrush(1, QBrush(scaled_image))
             #self.setPalette(palette)
+            
+            # Create list of buttons for layout:
+
+            BUTTONS = [QUIT_BUTTON, CLEAR_CREDENTIALS, UPLOAD_BUTTON]
+
+            # Create list of positions for buttons, x, y coordinates
+            # If another button is needed, increment range 
+            BUTTON_POSITIONS = [(i,j) for i in range(3) for j in range(3)]
 
             # Generate layout
-            self.layout()
-            # Run it
+            for BUTTON, POSITION in zip(BUTTONS, BUTTON_POSITIONS):
+                GRID_WINDOW.addWidget(BUTTON, *POSITION)
+            self.move(300, 150)
+
+            # Create window
             self.show()
 
     def ConfirmQuit(self):
