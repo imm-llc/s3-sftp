@@ -10,3 +10,11 @@ https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvaila
 ### Notes
 
 All development and testing thusfar has been performed on macOS Mojave. 
+
+
+### Local Testing
+
+Virtualenv setup:
+
+Virtualenv steps: python3 -m virtualenv <Virtual env name>
+In virtualenv : pip3 install boto3; pip3 install pyqt5; pip3 install botocore; pip3 install ntpath
