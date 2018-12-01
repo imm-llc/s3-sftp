@@ -105,6 +105,7 @@ class sftpUI(QWidget):
                        
             # Create quit button
             QUIT_BUTTON = QPushButton('Quit', self)
+            QUIT_BUTTON.setShortcut("Ctrl+Q")
             # Quit button tooltip definition
             QUIT_BUTTON.setToolTip(QUIT_TOOLTIP)
             # Jump to confirming they want to quit
@@ -114,6 +115,7 @@ class sftpUI(QWidget):
 
              # Create upload button
             UPLOAD_BUTTON = QPushButton('Upload', self)
+            UPLOAD_BUTTON.setShortcut("Ctrl+U")
             # Create tooltip for upload_button
             UPLOAD_BUTTON.setToolTip(UPLOAD_TOOLTIP)
             # Set recommended button size
@@ -126,6 +128,7 @@ class sftpUI(QWidget):
 
             # Create clear credentials button
             CLEAR_CREDENTIALS = QPushButton('Clear Credentials', self)
+            CLEAR_CREDENTIALS.setShortcut("Ctrl+D")
             CLEAR_CREDENTIALS.setToolTip(CLEAR_CREDS_TOOLTIP)
             # Jump to confirming they want to quit
             CLEAR_CREDENTIALS.clicked.connect(self.clearCredentials)
