@@ -229,13 +229,13 @@ class sftpUI(QWidget):
             
             # Create list for buckets -- this should create a drop down list
             buckets = []
-            self.GRID_WINDOW.addWidget(QLabel('SFTP Connection OK'), 1, 1)
             try:
                 for bucket in s3.buckets.all():
                 # Put existing buckets in list
                     buckets.append(bucket.name)
                 # Print for debug \|/
                 #print(buckets[0])
+                self.GRID_WINDOW.addWidget(QLabel('SFTP Connection OK'), 1, 1)
                 self.UPLOAD_BUCKET = buckets[0]
                 self.fileSelector(s3)
 
