@@ -151,7 +151,7 @@ class sftpUI(QWidget):
             """
             
             # Not working yet
-            
+
             #BACKGROUND = QImage(APP_ICON)
             #scaled_image = BACKGROUND.scaled(QSize(138, 177))
             #palette = QPalette()
@@ -259,22 +259,24 @@ class sftpUI(QWidget):
         except Exception as e:
             # Catch all
             print(e)
-        # Open window to select file
-        FILES_TO_UPLOAD = QFileDialog.getOpenFileName(self, 'Open file', MAC_BROWSER_LOCATION)
-        # Maybe put this in a list and for loop?
-        if FILES_TO_UPLOAD[0]:
-            FILES = FILES_TO_UPLOAD[0]
-            # haven't tried this yet
-            #for FULL_FILE in FILES:
-                # PATH, FILE = ntpath.split(FILES)
-                # s3.meta.client.upload_file(FILES, UPLOAD_BUCKET, FILE)
-            PATH, FILE = ntpath.split(FILES)
-            print(FILE)
-            
-            # Commented for debugging ntpath, also need to move this into for loop once that's working
-            #s3.meta.client.upload_file(FILES, UPLOAD_BUCKET, FILE)
-        
+        # Open window to select file, grab item at 0 index so we don't include filter
+        FILES_TO_UPLOAD = QFileDialog.getOpenFileNames(self, 'Open file', MAC_BROWSER_LOCATION)[0]
 
+        if FILES_TO_UPLOAD:
+            for FILE in FILES_TO_UPLOAD:
+                # Can comment out if not debugging
+                #print("DEBUG MODE: NOT UPLOADING")
+                # Can comment out if not debugging
+                #print("Full Path: {}".format(str(FILE)))
+                ### Do not comment out
+                PATH, FILE_NAME = ntpath.split(str(FILE))
+                # Can comment out if not debugging
+                #print("Uploading: {}".format(FILE_NAME))
+
+                # Commented for debugging
+                # Call s3 to upload file, parameters = Local file, Bucket to upload to, destination name
+                # We want destination file name to be _just_ the filename itself, otherwise you're creating a nasty path in S3
+                s3.meta.client.upload_file(FILE, UPLOAD_BUCKET, FILE_NAME)
 
 if __name__ == '__main__':
     
