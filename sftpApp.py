@@ -8,7 +8,7 @@ Virtualenv steps: python3 -m virtualenv <Virtual env name>
 In virtualenv : pip3 install boto3; pip3 install pyqt5; pip3 install botocore; pip3 install ntpath
 
 """
-import boto3, PyQt5, sys, os, json, getpass, botocore, ntpath, urllib3
+import boto3, PyQt5, sys, os, json, getpass, botocore, ntpath, urllib3, platform
 from botocore import *
 
 from PyQt5 import QtWidgets, QtGui
@@ -17,8 +17,9 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QWidget, QPushButton, QToolTi
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon, QFont, QImage, QPalette, QBrush
 
-KEYS_FILE = "key_secret.py"
+
 APP_ICON = "include/bhi.png"
+#APP_ICON = "bhi.icns"
 # Set these here so we can change for different business units
 WINDOW_TITLE = "BHI SFTP"
 ERR_WINDOW_TITLE = "Credential Error"
@@ -34,6 +35,18 @@ USER = getpass.getuser()
 MAC_LOCATION = "/Users/{}/.bhi/".format(USER)
 WIN_LOCATION = "C:\\Users\\{}\\.bhi\\".format(USER)
 LINUX_LOCATION = "/home/{}/.bhi/".format(USER)
+
+# What OS are we on?
+OS_TYPE = platform.system()
+if OS_TYPE == "Darwin":
+    BHI_LOCATION = MAC_LOCATION
+elif OS_TYPE == "Windows":
+    BHI_LOCATION = WIN_LOCATION
+else:
+    BHI_LOCATION = LINUX_LOCATION
+
+KEYS_FILE = os.path.join(BHI_LOCATION, "key_secret.py")
+
 #KEYS_FILE = os.path.join(xxx_LOCATION, "key_secret.py")
 
 # Default file browser location
@@ -49,6 +62,12 @@ class sftpUI(QWidget):
 
 
     def UI(self):
+            # Check if credentials directory exists
+            BHI_DIR_EXISTS = os.path.isdir(BHI_LOCATION)
+            if not BHI_DIR_EXISTS:
+                os.mkdir(BHI_LOCATION)
+            else:
+                pass
             # Check if credential file exists
             CREDS_FILE_EXISTS = os.path.isfile(KEYS_FILE)
             # credentials exist, go to main screen, we'll verify that they work later
@@ -80,33 +99,33 @@ class sftpUI(QWidget):
             self.setToolTip(MAIN_TOOLTIP)
                        
             # Create quit button
-            quit_button = QPushButton('Quit', self)
+            QUIT_BUTTON = QPushButton('Quit', self)
             # Quit button tooltip definition
-            quit_button.setToolTip(QUIT_TOOLTIP)
+            QUIT_BUTTON.setToolTip(QUIT_TOOLTIP)
             # Jump to confirming they want to quit
-            quit_button.clicked.connect(self.ConfirmQuit)
-            quit_button.resize(quit_button.sizeHint())
-            quit_button.move(1, 300)
+            QUIT_BUTTON.clicked.connect(self.ConfirmQuit)
+            QUIT_BUTTON.resize(QUIT_BUTTON.sizeHint())
+            QUIT_BUTTON.move(1, 300)
 
              # Create upload button
-            upload_button = QPushButton('Upload', self)
+            UPLOAD_BUTTON = QPushButton('Upload', self)
             # Create tooltip for upload_button
-            upload_button.setToolTip(UPLOAD_TOOLTIP)
+            UPLOAD_BUTTON.setToolTip(UPLOAD_TOOLTIP)
             # Set recommended button size
-            upload_button.resize(upload_button.sizeHint())
-            upload_button.move(350, 300)
+            UPLOAD_BUTTON.resize(UPLOAD_BUTTON.sizeHint())
+            UPLOAD_BUTTON.move(350, 300)
             # Call function
-            upload_button.clicked.connect(self.uploadS3)
+            UPLOAD_BUTTON.clicked.connect(self.uploadS3)
             
             #self.statusBar().showMessage('Ready')
 
             # Create clear credentials button
-            clear_credentials = QPushButton('Clear Credentials', self)
-            clear_credentials.setToolTip(CLEAR_CREDS_TOOLTIP)
+            CLEAR_CREDENTIALS = QPushButton('Clear Credentials', self)
+            CLEAR_CREDENTIALS.setToolTip(CLEAR_CREDS_TOOLTIP)
             # Jump to confirming they want to quit
-            clear_credentials.clicked.connect(self.clearCredentials)
-            clear_credentials.resize(clear_credentials.sizeHint())
-            clear_credentials.move(150, 300)
+            CLEAR_CREDENTIALS.clicked.connect(self.clearCredentials)
+            CLEAR_CREDENTIALS.resize(CLEAR_CREDENTIALS.sizeHint())
+            CLEAR_CREDENTIALS.move(150, 300)
             
             # Not working yet
 
@@ -265,7 +284,7 @@ class sftpUI(QWidget):
                 print("Uploading: {} to {}".format(FILE_NAME, UPLOAD_BUCKET))
 
                 # Uncomment following line to enable uploading
-                
+
                 #s3.meta.client.upload_file(FILE, UPLOAD_BUCKET, FILE_NAME)
                 # Can comment out if not debugging
                 ALERT_SUCCESS = QMessageBox()
