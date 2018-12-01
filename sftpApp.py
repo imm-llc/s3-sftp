@@ -25,9 +25,9 @@ APP_ICON = "include/bhi.png"
 WINDOW_TITLE = "BHI SFTP"
 ERR_WINDOW_TITLE = "Credential Error"
 MAIN_TOOLTIP = "BHI Born and Raised SFTP Program"
-UPLOAD_TOOLTIP = "Securely upload files to BHI"
-QUIT_TOOLTIP = "Quit the program"
-CLEAR_CREDS_TOOLTIP = "Delete your SFTP credentials"
+UPLOAD_TOOLTIP = "Securely upload files to BHI\nShortcut: Cmd+U"
+QUIT_TOOLTIP = "Quit the program\nShortcut: Cmd+Q"
+CLEAR_CREDS_TOOLTIP = "Delete your SFTP credentials\nShortcut: Cmd+D"
 CREDS_PROMPT_TITLE = "BHI SFTP CREDENTIALS"
 BUSINESS_UNIT = "BHI"
 
@@ -63,8 +63,6 @@ class sftpUI(QWidget):
         super().__init__()
         # Let the UI function do the heavy lifting
         self.UI()
-        #self.GetCredentials()
-
 
     def UI(self):
             # Check if credentials directory exists
@@ -87,16 +85,10 @@ class sftpUI(QWidget):
                 pass
             # Credentials don't exist, go to pop up for access key
             else:
-                #print("no creds")
                 self.GetAccessKey()
             
-            # Define main window size and location
-            self.setGeometry(300, 300, 450, 350)
-            # Set Window Title
-            self.setWindowTitle(WINDOW_TITLE)
-            # Set Tray icon
-            self.setWindowIcon(QIcon(APP_ICON))
-            # Create boxes
+
+            # Start creating buttons
 
             # Set tooltip font
             QToolTip.setFont(QFont('SansSerif', 10))
@@ -105,32 +97,43 @@ class sftpUI(QWidget):
                        
             # Create quit button
             QUIT_BUTTON = QPushButton('Quit', self)
+            QUIT_BUTTON.setShortcut("Ctrl+Q")
             # Quit button tooltip definition
             QUIT_BUTTON.setToolTip(QUIT_TOOLTIP)
+            QUIT_BUTTON.resize(QUIT_BUTTON.sizeHint())
             # Jump to confirming they want to quit
             QUIT_BUTTON.clicked.connect(self.ConfirmQuit)
-            QUIT_BUTTON.resize(QUIT_BUTTON.sizeHint())
-            QUIT_BUTTON.move(1, 300)
+            
 
              # Create upload button
             UPLOAD_BUTTON = QPushButton('Upload', self)
+            UPLOAD_BUTTON.setShortcut("Ctrl+U")
             # Create tooltip for upload_button
             UPLOAD_BUTTON.setToolTip(UPLOAD_TOOLTIP)
             # Set recommended button size
             UPLOAD_BUTTON.resize(UPLOAD_BUTTON.sizeHint())
-            UPLOAD_BUTTON.move(350, 300)
-            # Call function
+
+            # Call function when Upload clicked
             UPLOAD_BUTTON.clicked.connect(self.uploadS3)
             
-            #self.statusBar().showMessage('Ready')
 
             # Create clear credentials button
             CLEAR_CREDENTIALS = QPushButton('Clear Credentials', self)
+            CLEAR_CREDENTIALS.setShortcut("Ctrl+D")
             CLEAR_CREDENTIALS.setToolTip(CLEAR_CREDS_TOOLTIP)
+            CLEAR_CREDENTIALS.resize(CLEAR_CREDENTIALS.sizeHint())
+
             # Jump to confirming they want to quit
             CLEAR_CREDENTIALS.clicked.connect(self.clearCredentials)
-            CLEAR_CREDENTIALS.resize(CLEAR_CREDENTIALS.sizeHint())
-            CLEAR_CREDENTIALS.move(150, 300)
+            
+
+            # Define main window size and location
+            self.GRID_WINDOW = QGridLayout()
+            self.setLayout(self.GRID_WINDOW)
+            # Set Window Title
+            self.setWindowTitle(WINDOW_TITLE)
+            # Set Tray icon
+            self.setWindowIcon(QIcon(APP_ICON))
             
             # Not working yet
 
@@ -139,10 +142,21 @@ class sftpUI(QWidget):
             #palette = QPalette()
             #palette.setBrush(1, QBrush(scaled_image))
             #self.setPalette(palette)
+            
+            # Create list of buttons for layout:
+
+            BUTTONS = [QUIT_BUTTON, CLEAR_CREDENTIALS, UPLOAD_BUTTON]
+
+            # Create list of positions for buttons, x, y coordinates
+            # If another button is needed, increment range 
+            BUTTON_POSITIONS = [(i,j) for i in range(3) for j in range(3)]
 
             # Generate layout
-            self.layout()
-            # Run it
+            for BUTTON, POSITION in zip(BUTTONS, BUTTON_POSITIONS):
+                self.GRID_WINDOW.addWidget(BUTTON, *POSITION)
+            self.move(300, 150)
+
+            # Create window
             self.show()
 
     def ConfirmQuit(self):
@@ -212,22 +226,22 @@ class sftpUI(QWidget):
             # Try to connect and list buckets.
             
             s3 = boto3.resource('s3', aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key, region_name=self.s3_region)
-            # might be able to ditch client
-            #client = boto3.client('s3', aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key, region_name=self.s3_region)
-
+            
             # Create list for buckets -- this should create a drop down list
             buckets = []
-
             try:
                 for bucket in s3.buckets.all():
                 # Put existing buckets in list
                     buckets.append(bucket.name)
+                # Print for debug \|/
                 #print(buckets[0])
+                self.GRID_WINDOW.addWidget(QLabel('SFTP Connection OK'), 1, 1)
                 self.UPLOAD_BUCKET = buckets[0]
                 self.fileSelector(s3)
 
             except botocore.exceptions.ClientError as e:
                 # Cast error to a string so we can look for the reason behind the error
+                self.GRID_WINDOW.addWidget(QLabel('SFTP Connection Failed'), 1, 1)
 
                 ERROR_MESSAGE = str(e)
                 print(ERROR_MESSAGE)
@@ -246,6 +260,8 @@ class sftpUI(QWidget):
                     self.FULL_ERROR = ERROR_MESSAGE
                     self.badCredentialsError()
             except botocore.exceptions.EndpointConnectionError as e:
+                self.GRID_WINDOW.addWidget(QLabel('SFTP Connection Failed'), 1, 1)
+
                 ERROR_MESSAGE = str(e)
                 self.ERROR = "Invalid Region"
                 self.FULL_ERROR = ERROR_MESSAGE
@@ -256,6 +272,8 @@ class sftpUI(QWidget):
             #    print("URLLIB")
     
             except Exception as e:
+                self.GRID_WINDOW.addWidget(QLabel('SFTP Connection Failed'), 1, 1)
+
                 ERROR_MESSAGE = str(e)
 
                 # Catch all
@@ -263,6 +281,8 @@ class sftpUI(QWidget):
                 self.FULL_ERROR = ERROR_MESSAGE
                 self.badCredentialsError()
         except Exception as e:
+            self.GRID_WINDOW.addWidget(QLabel('SFTP Connection Failed'), 1, 1)
+
             ERROR_MESSAGE = str(e)
             self.ERROR = "Unhandled error"
             self.FULL_ERROR = ERROR_MESSAGE
