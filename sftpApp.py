@@ -26,6 +26,7 @@ UPLOAD_TOOLTIP = "Securely upload files to BHI"
 QUIT_TOOLTIP = "Quit the program"
 CLEAR_CREDS_TOOLTIP = "Delete your SFTP credentials"
 CREDS_PROMPT_TITLE = "BHI SFTP CREDENTIALS"
+BUSINESS_UNIT = "BHI"
 
 # Default credential location
 USER = getpass.getuser()
@@ -263,6 +264,11 @@ class sftpUI(QWidget):
         FILES_TO_UPLOAD = QFileDialog.getOpenFileNames(self, 'Open file', MAC_BROWSER_LOCATION)[0]
 
         if FILES_TO_UPLOAD:
+            COUNT = len(FILES_TO_UPLOAD)
+            if COUNT < 2:
+                FILE_PLURAL = "file"
+            else:
+                FILE_PLURAL = "files"
             for FILE in FILES_TO_UPLOAD:
                 # Can comment out if not debugging
                 print("DEBUG MODE: NOT UPLOADING")
@@ -272,12 +278,41 @@ class sftpUI(QWidget):
                 PATH, FILE_NAME = ntpath.split(str(FILE))
                 # Can comment out if not debugging
                 print("Uploading: {} to {}".format(FILE_NAME, UPLOAD_BUCKET))
+                # Can comment out if not debugging
+                ALERT_SUCCESS = QMessageBox()
+                # Can comment out if not debugging
+                ALERT_SUCCESS.setIcon(QMessageBox.Information)
+                # Can comment out if not debugging
+                ALERT_SUCCESS.setText("Successfully uploaded {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
+                # Can comment out if not debugging
+                ALERT_SUCCESS.setWindowTitle(WINDOW_TITLE)
+                # Can comment out if not debugging
+                ALERT_SUCCESS.setStandardButtons(QMessageBox.Ok)
+                # Can comment out if not debugging
+                ALERT_SUCCESS.exec_()
+
 
 
                 # Commented for debugging
                 # Call s3 to upload file, parameters = Local file, Bucket to upload to, destination name
                 # We want destination file name to be _just_ the filename itself, otherwise you're creating a nasty path in S3
-                #s3.meta.client.upload_file(FILE, UPLOAD_BUCKET, FILE_NAME)
+                #try:
+                    #s3.meta.client.upload_file(FILE, UPLOAD_BUCKET, FILE_NAME)
+                    # Build success alert message 
+                    #ALERT_SUCESS = QMessageBox()
+                    #ALERT_SUCCESS.setIcon(QMessageBox.Information)
+                    #ALERT_SUCCESS.setText("Successfully uploaded {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
+                    #ALERT_SUCCESS.setWindowTitle(WINDOW_TITLE)
+                    #ALERT_SUCCESS.setStandardButtons(QMessageBox.Ok)
+                    #ALERT_SUCCESS.exec_()
+                # Generic exception, not sure what errors will be thrown here
+                # except Exception as e:
+                    #ALERT_FAIL = QMessageBox()
+                    #ALERT_FAIL.setIcon(QMessageBox.Critical)
+                    #ALERT_FAIL.setText("Failed to upload {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
+                    #ALERT_FAIL.setWindowTitle(WINDOW_TITLE)
+                    #ALERT_FAIL.setStandardButtons(QMessageBox.Ok)
+                    #ALERT_FAIL.exec_()
 
 if __name__ == '__main__':
     
