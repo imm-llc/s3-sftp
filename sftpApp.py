@@ -8,7 +8,7 @@ Virtualenv steps: python3 -m virtualenv <Virtual env name>
 In virtualenv : pip3 install boto3; pip3 install pyqt5; pip3 install botocore; pip3 install ntpath
 
 """
-import boto3, PyQt5, sys, os, json, getpass, botocore, ntpath, urllib3
+import boto3, PyQt5, sys, os, json, getpass, botocore, ntpath, urllib3, platform
 from botocore import *
 
 from PyQt5 import QtWidgets, QtGui
@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (QApplication, QLabel, QWidget, QPushButton, QToolTi
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon, QFont, QImage, QPalette, QBrush
 
-KEYS_FILE = "key_secret.py"
+
 APP_ICON = "include/bhi.png"
 # Set these here so we can change for different business units
 WINDOW_TITLE = "BHI SFTP"
@@ -34,6 +34,18 @@ USER = getpass.getuser()
 MAC_LOCATION = "/Users/{}/.bhi/".format(USER)
 WIN_LOCATION = "C:\\Users\\{}\\.bhi\\".format(USER)
 LINUX_LOCATION = "/home/{}/.bhi/".format(USER)
+
+# What OS are we on?
+OS_TYPE = platform.system()
+if OS_TYPE == "Darwin":
+    BHI_LOCATION = MAC_LOCATION
+elif OS_TYPE == "Windows":
+    BHI_LOCATION = WIN_LOCATION
+else:
+    BHI_LOCATION = LINUX_LOCATION
+
+KEYS_FILE = os.path.join(BHI_LOCATION, "key_secret.py")
+
 #KEYS_FILE = os.path.join(xxx_LOCATION, "key_secret.py")
 
 # Default file browser location
@@ -49,6 +61,12 @@ class sftpUI(QWidget):
 
 
     def UI(self):
+            # Check if credentials directory exists
+            BHI_DIR_EXISTS = os.path.isdir(BHI_LOCATION)
+            if not BHI_DIR_EXISTS:
+                os.mkdir(BHI_LOCATION)
+            else:
+                pass
             # Check if credential file exists
             CREDS_FILE_EXISTS = os.path.isfile(KEYS_FILE)
             # credentials exist, go to main screen, we'll verify that they work later
@@ -265,7 +283,7 @@ class sftpUI(QWidget):
                 print("Uploading: {} to {}".format(FILE_NAME, UPLOAD_BUCKET))
 
                 # Uncomment following line to enable uploading
-                
+
                 #s3.meta.client.upload_file(FILE, UPLOAD_BUCKET, FILE_NAME)
                 # Can comment out if not debugging
                 ALERT_SUCCESS = QMessageBox()
