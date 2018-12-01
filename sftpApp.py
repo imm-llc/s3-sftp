@@ -265,18 +265,19 @@ class sftpUI(QWidget):
         if FILES_TO_UPLOAD:
             for FILE in FILES_TO_UPLOAD:
                 # Can comment out if not debugging
-                #print("DEBUG MODE: NOT UPLOADING")
+                print("DEBUG MODE: NOT UPLOADING")
                 # Can comment out if not debugging
-                #print("Full Path: {}".format(str(FILE)))
+                print("Full Path: {}".format(str(FILE)))
                 ### Do not comment out
                 PATH, FILE_NAME = ntpath.split(str(FILE))
                 # Can comment out if not debugging
-                #print("Uploading: {}".format(FILE_NAME))
+                print("Uploading: {} to {}".format(FILE_NAME, UPLOAD_BUCKET))
+
 
                 # Commented for debugging
                 # Call s3 to upload file, parameters = Local file, Bucket to upload to, destination name
                 # We want destination file name to be _just_ the filename itself, otherwise you're creating a nasty path in S3
-                s3.meta.client.upload_file(FILE, UPLOAD_BUCKET, FILE_NAME)
+                #s3.meta.client.upload_file(FILE, UPLOAD_BUCKET, FILE_NAME)
 
 if __name__ == '__main__':
     
