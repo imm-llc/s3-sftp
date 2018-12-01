@@ -241,6 +241,7 @@ class sftpUI(QWidget):
 
             except botocore.exceptions.ClientError as e:
                 # Cast error to a string so we can look for the reason behind the error
+                self.GRID_WINDOW.addWidget(QLabel('SFTP Connection Failed'), 1, 1)
 
                 ERROR_MESSAGE = str(e)
                 print(ERROR_MESSAGE)
@@ -259,6 +260,8 @@ class sftpUI(QWidget):
                     self.FULL_ERROR = ERROR_MESSAGE
                     self.badCredentialsError()
             except botocore.exceptions.EndpointConnectionError as e:
+                self.GRID_WINDOW.addWidget(QLabel('SFTP Connection Failed'), 1, 1)
+
                 ERROR_MESSAGE = str(e)
                 self.ERROR = "Invalid Region"
                 self.FULL_ERROR = ERROR_MESSAGE
@@ -269,6 +272,8 @@ class sftpUI(QWidget):
             #    print("URLLIB")
     
             except Exception as e:
+                self.GRID_WINDOW.addWidget(QLabel('SFTP Connection Failed'), 1, 1)
+
                 ERROR_MESSAGE = str(e)
 
                 # Catch all
@@ -276,6 +281,8 @@ class sftpUI(QWidget):
                 self.FULL_ERROR = ERROR_MESSAGE
                 self.badCredentialsError()
         except Exception as e:
+            self.GRID_WINDOW.addWidget(QLabel('SFTP Connection Failed'), 1, 1)
+
             ERROR_MESSAGE = str(e)
             self.ERROR = "Unhandled error"
             self.FULL_ERROR = ERROR_MESSAGE
