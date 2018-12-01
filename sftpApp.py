@@ -128,8 +128,8 @@ class sftpUI(QWidget):
             
 
             # Define main window size and location
-            GRID_WINDOW = QGridLayout()
-            self.setLayout(GRID_WINDOW)
+            self.GRID_WINDOW = QGridLayout()
+            self.setLayout(self.GRID_WINDOW)
             # Set Window Title
             self.setWindowTitle(WINDOW_TITLE)
             # Set Tray icon
@@ -153,7 +153,7 @@ class sftpUI(QWidget):
 
             # Generate layout
             for BUTTON, POSITION in zip(BUTTONS, BUTTON_POSITIONS):
-                GRID_WINDOW.addWidget(BUTTON, *POSITION)
+                self.GRID_WINDOW.addWidget(BUTTON, *POSITION)
             self.move(300, 150)
 
             # Create window
@@ -226,16 +226,15 @@ class sftpUI(QWidget):
             # Try to connect and list buckets.
             
             s3 = boto3.resource('s3', aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key, region_name=self.s3_region)
-            # might be able to ditch client
-            #client = boto3.client('s3', aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key, region_name=self.s3_region)
-
+            
             # Create list for buckets -- this should create a drop down list
             buckets = []
-
+            self.GRID_WINDOW.addWidget(QLabel('SFTP Connection OK'), 1, 1)
             try:
                 for bucket in s3.buckets.all():
                 # Put existing buckets in list
                     buckets.append(bucket.name)
+                # Print for debug \|/
                 #print(buckets[0])
                 self.UPLOAD_BUCKET = buckets[0]
                 self.fileSelector(s3)
