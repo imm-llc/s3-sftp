@@ -10,10 +10,10 @@ from botocore import *
 
 from PyQt5 import QtWidgets, QtGui
 # Need to narrow this down
-from PyQt5.QtWidgets import (QApplication, QLabel, QWidget, QPushButton, QToolTip, QMessageBox, QInputDialog, QDesktopWidget, QMainWindow, QStatusBar, 
-    QLineEdit, QTextEdit, QGridLayout, QHBoxLayout, QFrame, QSplitter, QStyleFactory, QFileDialog, QAction)
+from PyQt5.QtWidgets import (QApplication, QLabel, QWidget, QPushButton, QToolTip, QMessageBox, QInputDialog, QDesktopWidget, QMainWindow, 
+    QLineEdit, QGridLayout, QFrame, QStyleFactory, QFileDialog, QAction)
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QPixmap, QIcon, QFont, QImage, QPalette, QBrush
+from PyQt5.QtGui import QPixmap, QIcon, QFont, QImage
 
 
 APP_ICON = "include/bhi.png"
