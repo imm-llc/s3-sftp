@@ -11,6 +11,34 @@ https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvaila
 
 All development and testing thusfar has been performed on macOS Mojave. 
 
+### Logging
+
+I've built in a remote logging feature so you are alerted when an upload succeeds or fails. If you don't want to log anything, you'll need to (at the very least):
+
+Remove the `GetAuthToken` function.
+
+Change the call to `self.GetAuthToken()` in `GetRegion` to `self.GetBucket()`.
+
+Remove the `self.AUTH_TOKEN` variable in the `UI` function. 
+
+Define `LOG_LOCATION` as a blackhole. 127.0.0.1 should work. The logging function is a `try/except` block. It _should_ error silently if it can't connect.
+
+Of course, the clean way to remove logging is perform the above steps, remove the `try/except` blocks, and remove the logging variables in lines 45-47ish.
+
+
+If you _do_ want to set up remote logging, you're in luck. I wrote a logging server in Go. 
+
+### logging-server.go
+
+High level: 
+
+Posts to Slack when there are success or failures with the app.
+
+In Depth: 
+
+Coming soon but I want to go home today.
+
+
 ### IAM Permissions
 
 This application is written with the intention of allowing someone, say, a client, to upload objects to S3. As such, they need permission to `PutObject` on their bucket. 
