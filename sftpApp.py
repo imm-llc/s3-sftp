@@ -398,7 +398,7 @@ class sftpUI(QWidget):
                         JSON_ERROR = {}
                         JSON_ERROR['Auth'] = self.AUTH_TOKEN # Set per client
                         JSON_ERROR['Action'] = "Fail"
-                        JSON_ERROR['LogMessage'] = self.FULL_ERROR
+                        JSON_ERROR['LogMessage'] = FULL_ERROR
                         requests.post(LOG_FULL_URL, data=json.dumps(JSON_ERROR))
                     except:
                         # If we can't send the error to the log endpoint, fail silently
