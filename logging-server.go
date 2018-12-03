@@ -72,14 +72,13 @@ func checkAuth(response_ http.ResponseWriter, request *http.Request) {
 		slack_attachment := slack.Attachment{
 			Color: slack_attachment_color,
 			Text: slack_long_message,
-
 				Fields: []slack.AttachmentField{
 					slack.AttachmentField{
 						Title: slack_title,
 					},
 				},
 		}
-
+		fmt.Println(CHANNEL_ID)
 		channelID, timestamp, err := slack_api.PostMessage(CHANNEL_ID, slack.MsgOptionAttachments(slack_attachment))
 		if err != nil {
 			LOG_FILE := "/path/to/log.error"
@@ -95,8 +94,7 @@ func checkAuth(response_ http.ResponseWriter, request *http.Request) {
 			LOG_FILE := "/path/to/log.log"
 			slack_success_prefix := "Message successfully sent to channel: "
 
-
-			f, err := os.OpenFile(LOG_FILE, os.O_APPEND|os.O_WRONLY, 0640)
+			f, err := os.OpenFile(LOG_FILE, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0640)
 			error_func(err)
 
 			defer f.Close()
