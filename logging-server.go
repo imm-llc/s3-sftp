@@ -116,6 +116,14 @@ func main() {
 	// Build HTTP server
 	// Listen on root path, go to checkAuth function
 	http.HandleFunc("/", checkAuth)
+	
+	/*
+	Uncomment for HTTPS
+	err := http.ListenAndServeTLS(":31313", "server.crt", "server.key", nil)
+	if err != nil {
+		panic(err)
+	}
+	*/
 	// try to listen on TCP/31313 unless there's an error, then stop and display error
 	if err := http.ListenAndServe(":31313", nil); err != nil {
 		panic(err)
