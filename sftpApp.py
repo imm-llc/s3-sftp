@@ -5,7 +5,7 @@ A wrapper for the S3 API
 Regretful Developer: Mitch Anderson
 
 """
-import boto3, PyQt5, sys, os, json, getpass, botocore, ntpath, urllib3, platform, socket
+import boto3, PyQt5, sys, os, json, getpass, botocore, ntpath, urllib3, platform, requests
 from botocore import *
 
 from PyQt5 import QtWidgets, QtGui
@@ -25,6 +25,7 @@ UPLOAD_TOOLTIP = "Securely upload files to BHI\nShortcut: Cmd+U"
 QUIT_TOOLTIP = "Quit the program\nShortcut: Cmd+Q"
 CLEAR_CREDS_TOOLTIP = "Delete your SFTP credentials\nShortcut: Cmd+D"
 CREDS_PROMPT_TITLE = "BHI SFTP CREDENTIALS"
+AUTH_TOKEN_PROMPT = "Authorization Token"
 BUSINESS_UNIT = "BHI"
 
 # Default credential location
@@ -38,19 +39,12 @@ MAC_BROWSER_LOCATION = "/Users/{}/Downloads/".format(USER)
 WIN_BROWSER_LOCATION = "C:/Users/{}/Downloads".format(USER)
 LINUX_BROWSER_LOCATION = "/home/{}/Downloads".format(USER)
 
-"""
-# Loggging
-LOG_LOCATION = ""
-LOG_PROTO = "udp"
-LOG_PORT = ""
-# move this to a function
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.sendto(bytes(JSON_ERROR, "utf-8"), (UDP_IP, UDP_PORT))
-JSON_ERROR = {}
-JSON_ERROR['auth_token'] = "" # Set per client
-JSON_ERROR['error_message'] = ERROR_MESSAGE
 
-"""
+# Loggging
+LOG_LOCATION = "http://example.com"
+LOG_PORT = "11223"
+LOG_FULL_URL = LOG_LOCATION+":"+LOG_PORT
+
 # What OS are we on?
 OS_TYPE = platform.system()
 if OS_TYPE == "Darwin":
@@ -93,7 +87,8 @@ class sftpUI(QWidget):
                     self.s3_access_key = KF_LINES[0]
                     self.s3_secret_key = KF_LINES[1]
                     self.s3_region = KF_LINES[2]
-                    self.UPLOAD_BUCKET = KF_LINES[3]
+                    self.AUTH_TOKEN = KF_LINES[3]
+                    self.UPLOAD_BUCKET = KF_LINES[4]
                     KF.close()
                 pass
             # Credentials don't exist, go to pop up for access key
@@ -222,6 +217,21 @@ class sftpUI(QWidget):
         else:
             # They pressed ok but with no input, prompt again
             self.GetRegion()
+    def GetAuthToken(self):
+        text, okPressed = QInputDialog.getText(self, AUTH_TOKEN_PROMPT, "Authorization Token", QLineEdit.Normal, "")
+        if okPressed and text != '':
+            with open(KEYS_FILE, "a") as KF:
+                KF.write("\n")
+                KF.write(str(text))
+                KF.close()
+                # We're ok to move to UI now, we have Access, Secret, and Region
+                self.GetBucket()
+        # They've already cancelled access, let's quit this pop up. We'll error out later but we'll catch it
+        elif not okPressed:
+            QApplication.instance().quit
+        else:
+            # They pressed ok but with no input, prompt again
+            self.GetAuthToken()
     def GetBucket(self):
         text, okPressed = QInputDialog.getText(self, CREDS_PROMPT_TITLE, "SFTP Bucket", QLineEdit.Normal, "")
         if okPressed and text != '':
@@ -256,8 +266,10 @@ class sftpUI(QWidget):
             try:
                 # Try to list bucket contents
                 CHECK_BUCKET_CONNECTION = s3.Bucket(self.UPLOAD_BUCKET)
-                print(CHECK_BUCKET_CONNECTION)
-                print(CHECK_BUCKET_CONNECTION.objects.all())
+
+                for item in CHECK_BUCKET_CONNECTION.objects.all():
+                    with open(os.devnull, "w") as DEV:
+                        DEV.write(item)
 
                 
                 # Create label verifying connection is OK
@@ -361,6 +373,16 @@ class sftpUI(QWidget):
                     ALERT_SUCCESS.setText("Successfully uploaded {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
                     ALERT_SUCCESS.setWindowTitle(WINDOW_TITLE)
                     ALERT_SUCCESS.setStandardButtons(QMessageBox.Ok)
+                    # Send log message first
+                    try:
+                        JSON_SUCCESS = {}
+                        JSON_SUCCESS['Auth'] = self.AUTH_TOKEN # Set per client
+                        JSON_SUCCESS['Action'] = "Success"
+                        JSON_SUCCESS['LogMessage'] = "Successful upload to {}".format(UPLOAD_BUCKET)
+                        requests.post(LOG_FULL_URL, data=json.dumps(JSON_SUCCESS))
+                    except:
+                        # If we can't send the error to the log endpoint, fail silently
+                        continue
                     ALERT_SUCCESS.exec_()
                 # Generic exception, not sure what errors will be thrown here
                 except Exception as e:
@@ -372,6 +394,15 @@ class sftpUI(QWidget):
                     ALERT_FAIL.setText("Failed to upload {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
                     ALERT_FAIL.setWindowTitle(WINDOW_TITLE)
                     ALERT_FAIL.setStandardButtons(QMessageBox.Ok)
+                    try:
+                        JSON_ERROR = {}
+                        JSON_ERROR['Auth'] = self.AUTH_TOKEN # Set per client
+                        JSON_ERROR['Action'] = "Fail"
+                        JSON_ERROR['LogMessage'] = self.FULL_ERROR
+                        requests.post(LOG_FULL_URL, data=json.dumps(JSON_ERROR))
+                    except:
+                        # If we can't send the error to the log endpoint, fail silently
+                        pass
                     ALERT_FAIL.exec_()
     def badCredentialsError(self):
 
@@ -383,6 +414,15 @@ class sftpUI(QWidget):
         ALERT_CREDENTIALS.setDetailedText(self.FULL_ERROR)
         ALERT_CREDENTIALS.setWindowTitle(ERR_WINDOW_TITLE)
         ALERT_CREDENTIALS.setStandardButtons(QMessageBox.Ok)
+        try:
+            JSON_ERROR = {}
+            JSON_ERROR['Auth'] = self.AUTH_TOKEN # Set per client
+            JSON_ERROR['Action'] = "Fail"
+            JSON_ERROR['LogMessage'] = self.FULL_ERROR
+            requests.post(LOG_FULL_URL, data=json.dumps(JSON_ERROR))
+        except:
+            # If we can't send the error to the log endpoint, fail silently
+            pass
         ALERT_CREDENTIALS.exec_()
         
         
