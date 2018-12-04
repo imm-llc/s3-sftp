@@ -58,7 +58,7 @@ else:
     BHI_LOCATION = LINUX_LOCATION
     DEFAULT_BROWSER_LOCATION = LINUX_BROWSER_LOCATION
 
-KEYS_FILE = os.path.join(BHI_LOCATION, "key_secret.py")
+KEYS_FILE = os.path.join(BHI_LOCATION, "key_secret.json")
 
 # Default file browser location
 MAC_BROWSER_LOCATION = "/Users/{}/Downloads/".format(USER)
@@ -82,13 +82,13 @@ class sftpUI(QWidget):
             # credentials exist, go to main screen, we'll verify that they work later
             if CREDS_FILE_EXISTS:
                 with open(KEYS_FILE, "r") as KF:
-                    KF_LINES = KF.read().splitlines()
-                    # Add these variables to the sftpUI class
-                    self.s3_access_key = KF_LINES[0]
-                    self.s3_secret_key = KF_LINES[1]
-                    self.s3_region = KF_LINES[2]
-                    self.AUTH_TOKEN = KF_LINES[3]
-                    self.UPLOAD_BUCKET = KF_LINES[4]
+                    JSON_AUTH_DATA = json.load(KF)
+                    self.s3_access_key = JSON_AUTH_DATA['Access']
+                    self.s3_secret_key = JSON_AUTH_DATA['Secret']
+                    self.s3_region = JSON_AUTH_DATA['Region']
+                    self.AUTH_TOKEN = JSON_AUTH_DATA['AuthToken']
+                    # Set default bucket
+                    self.UPLOAD_BUCKET = JSON_AUTH_DATA['Bucket'][0]
                     KF.close()
                 pass
             # Credentials don't exist, go to pop up for access key
@@ -166,6 +166,7 @@ class sftpUI(QWidget):
             self.show()
 
     def ConfirmQuit(self):
+        
         # Title of popup,  Message in text field, option 1, option 2, default
         confirmation = QMessageBox.question(self, "Message", "Are you sure you want to quit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if confirmation == QMessageBox.Yes:
@@ -173,15 +174,14 @@ class sftpUI(QWidget):
         else:
             # Quit this pop up
             QApplication.instance().quit
-    
     def GetAccessKey(self):
+        # Create initial JSON for auth
+        self.AUTH_JSON = {}
         # Create popup
         text, okPressed = QInputDialog.getText(self, CREDS_PROMPT_TITLE, "SFTP Acces Key", QLineEdit.Normal, "")
         if okPressed and text != '':
-            with open(KEYS_FILE, "a") as KF:
-                KF.write(str(text))
-                KF.close()
-                self.GetSecretKey()
+            self.AUTH_JSON['Access'] = str(text)
+            self.GetSecretKey()
         # If cancel is pressed, go to GetSecretKey function
         elif not okPressed:
             self.GetSecretKey()
@@ -191,11 +191,8 @@ class sftpUI(QWidget):
     def GetSecretKey(self):
         text, okPressed = QInputDialog.getText(self, CREDS_PROMPT_TITLE, "SFTP Secret Key", QLineEdit.Normal, "")
         if okPressed and text != '':
-            with open(KEYS_FILE, "a") as KF:
-                KF.write("\n")
-                KF.write(str(text))
-                KF.close()
-                self.GetRegion()
+            self.AUTH_JSON['Secret'] = str(text)
+            self.GetRegion()
         # They cancelled, move on to region
         elif not okPressed:
             self.GetRegion()
@@ -205,12 +202,9 @@ class sftpUI(QWidget):
     def GetRegion(self):
         text, okPressed = QInputDialog.getText(self, CREDS_PROMPT_TITLE, "SFTP Region", QLineEdit.Normal, "")
         if okPressed and text != '':
-            with open(KEYS_FILE, "a") as KF:
-                KF.write("\n")
-                KF.write(str(text))
-                KF.close()
-                # We're ok to move to UI now, we have Access, Secret, and Region
-                self.GetBucket()
+            self.AUTH_JSON['Region'] = str(text)
+            # We're ok to move to UI now, we have Access, Secret, and Region
+            self.GetAuthToken()
         # They've already cancelled access, let's quit this pop up. We'll error out later but we'll catch it
         elif not okPressed:
             QApplication.instance().quit
@@ -220,12 +214,9 @@ class sftpUI(QWidget):
     def GetAuthToken(self):
         text, okPressed = QInputDialog.getText(self, AUTH_TOKEN_PROMPT, "Authorization Token", QLineEdit.Normal, "")
         if okPressed and text != '':
-            with open(KEYS_FILE, "a") as KF:
-                KF.write("\n")
-                KF.write(str(text))
-                KF.close()
-                # We're ok to move to UI now, we have Access, Secret, and Region
-                self.GetBucket()
+            self.AUTH_JSON['AuthToken'] = str(text)
+            # We're ok to move to UI now, we have Access, Secret, and Region
+            self.GetBucket()
         # They've already cancelled access, let's quit this pop up. We'll error out later but we'll catch it
         elif not okPressed:
             QApplication.instance().quit
@@ -235,12 +226,14 @@ class sftpUI(QWidget):
     def GetBucket(self):
         text, okPressed = QInputDialog.getText(self, CREDS_PROMPT_TITLE, "SFTP Bucket", QLineEdit.Normal, "")
         if okPressed and text != '':
-            with open(KEYS_FILE, "a") as KF:
-                KF.write("\n")
-                KF.write(str(text))
-                KF.close()
+            self.AUTH_JSON['Bucket'] = []
+            self.AUTH_JSON['Bucket'].append(str(text))
+            with open(KEYS_FILE, "w") as KF:
+                # Write final JSON to file
+                KF.write(json.dumps(self.AUTH_JSON))
+
                 # We're ok to move to UI now, we have Access, Secret, and Region
-                self.UI()
+            self.UI()
         # They've already cancelled access, let's quit this pop up. We'll error out later but we'll catch it
         elif not okPressed:
             QApplication.instance().quit
