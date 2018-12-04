@@ -5,7 +5,9 @@ A wrapper for the S3 API
 Regretful Developer: Mitch Anderson
 
 """
+
 import boto3, PyQt5, sys, os, json, getpass, botocore, ntpath, urllib3, platform, requests
+
 from botocore import *
 
 from PyQt5 import QtWidgets, QtGui
@@ -38,6 +40,7 @@ LINUX_LOCATION = "/home/{}/.bhi/".format(USER)
 MAC_BROWSER_LOCATION = "/Users/{}/Downloads/".format(USER)
 WIN_BROWSER_LOCATION = "C:/Users/{}/Downloads".format(USER)
 LINUX_BROWSER_LOCATION = "/home/{}/Downloads".format(USER)
+
 
 
 # Loggging
@@ -263,6 +266,7 @@ class sftpUI(QWidget):
             
             s3 = boto3.resource('s3', aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key, region_name=self.s3_region)
 
+
             try:
                 # Try to list bucket contents
                 CHECK_BUCKET_CONNECTION = s3.Bucket(self.UPLOAD_BUCKET)
@@ -275,7 +279,42 @@ class sftpUI(QWidget):
                 # Create label verifying connection is OK
                 self.GRID_WINDOW.addWidget(QLabel("SFTP Connection to {} OK".format(self.UPLOAD_BUCKET)), 1, 1)
                 # Call fileSelector function, pass s3 to make life easy
+            
+            # Create list for buckets that we'll use for a drop down list
+            #buckets = []
+            # Create dropdown list item
+            #self.BUCKET_LIST = QComboBox(self)
+            try:
+                # Try to list bucket contents
+                CHECK_BUCKET_CONNECTION = s3.Bucket(self.UPLOAD_BUCKET)
+                print(CHECK_BUCKET_CONNECTION)
+                print(CHECK_BUCKET_CONNECTION.objects.all())
+                #for item in F_BUCKET.objects.all():
+                    #print(item)
+                #self.UPLOAD_BUCKET.objects.all()
+
+                #for bucket in s3.buckets.all():
+                    # Put existing buckets in list
+                    #buckets.append(bucket.name)
+                    #self.BUCKET_LIST.addItem(bucket.name)
+                #print(buckets[0])
+                
+                # Create label verifying connection is OK
+                self.GRID_WINDOW.addWidget(QLabel("SFTP Connection to {} OK".format(self.UPLOAD_BUCKET)), 1, 1)
+
                 self.fileSelector(s3)
+                #self.GRID_WINDOW.addWidget(QLabel(self.UPLOAD_BUCKET), 1, 2)
+                # If there's only one bucket, UPLOAD_BUCKET is the first item in the list
+                """
+                commented out because we're getting bucket name explicitly
+                if len(buckets) == 1:
+                    self.UPLOAD_BUCKET = buckets[0]
+                    # 
+                    self.fileSelector
+                else:
+                    # 
+                    self.BUCKET_LIST.activated[str].connect(self.fileSelector)
+                """
 
             except botocore.exceptions.ClientError as e:
                 # Cast error to a string so we can look for the reason behind the error

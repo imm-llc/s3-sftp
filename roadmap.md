@@ -10,6 +10,7 @@ Store config as JSON
 
 Add support for multiple buckets
 
+
 ~~File browser~~
 
 ~~Either on install or first run, we need to create the credentials file directory~~
