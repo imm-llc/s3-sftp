@@ -5,6 +5,7 @@ Need to add:
 S3 upload status
 
 Check size of file to upload and if it's larger than a certain size, warn user that it will take awhile
+: https://www.systutorials.com/241542/how-to-get-file-size-in-python/
 ~~File browser~~
 
 ~~Either on install or first run, we need to create the credentials file directory~~
