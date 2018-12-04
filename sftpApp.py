@@ -266,7 +266,7 @@ class sftpUI(QWidget):
 
                 for item in CHECK_BUCKET_CONNECTION.objects.all():
                     with open(os.devnull, "w") as DEV:
-                        DEV.write(item)
+                        DEV.write(str(item))
 
                 
                 # Create label verifying connection is OK
