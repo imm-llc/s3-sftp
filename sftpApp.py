@@ -151,7 +151,16 @@ class sftpUI(QWidget):
             #palette = QPalette()
             #palette.setBrush(1, QBrush(scaled_image))
             #self.setPalette(palette)
-            
+            self.BUCKET_LIST_BOX = QComboBox(self)
+            if len(self.BUCKET_LIST) < 2:
+                self.UPLOAD_BUCKET = self.UPLOAD_BUCKET
+                self.BUCKET_LIST_BOX.addItem(self.UPLOAD_BUCKET)
+                self.GRID_WINDOW.addWidget(self.BUCKET_LIST_BOX, 3, 2)
+            else:
+                for BUCKET in self.BUCKET_LIST:
+                    self.BUCKET_LIST_BOX.addItem(BUCKET)
+                self.GRID_WINDOW.addWidget(self.BUCKET_LIST_BOX, 3, 2)
+
             # Create list of buttons for layout:
 
             BUTTONS = [QUIT_BUTTON, CLEAR_CREDENTIALS, UPLOAD_BUTTON]
@@ -256,17 +265,18 @@ class sftpUI(QWidget):
         
         try:
             # Try to connect and list buckets.
-            
             s3 = boto3.resource('s3', aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key, region_name=self.s3_region)
 
 
             try:
                 # Try to list bucket contents
+                self.UPLOAD_BUCKET = str(self.BUCKET_LIST_BOX.currentText())
+
                 CHECK_BUCKET_CONNECTION = s3.Bucket(self.UPLOAD_BUCKET)
 
                 for item in CHECK_BUCKET_CONNECTION.objects.all():
                     with open(os.devnull, "w") as DEV:
-                        DEV.write(item)
+                        DEV.write(str(item))
 
                 
                 # Create label verifying connection is OK
