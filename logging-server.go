@@ -15,6 +15,11 @@ func error_func(e error) {
 	}
 }
 
+func pong(response_ http.ResponseWriter, request *http.Request) {
+	response_.Write([]byte("pong"))
+}
+
+
 func checkAuth(response_ http.ResponseWriter, request *http.Request) {
 
 	// Create structure for incoming json
@@ -32,12 +37,12 @@ func checkAuth(response_ http.ResponseWriter, request *http.Request) {
 
 	// decode JSON_ and store it in json_data
 	err := JSON_.Decode(&json_data)
-	
-	// if there was an error decoding the json, stop and display the error 
+
+	// if there was an error decoding the json, stop and display the error
 	if err != nil {
         panic(err)
 	}
-	
+
 	// Create map of allowed auth tokens
 	/* allowed_tokens := map[string] bool {
 		"ABCDEF" : true,
@@ -87,7 +92,7 @@ func checkAuth(response_ http.ResponseWriter, request *http.Request) {
 	}
 
 }
-	
+
 func slack_post(action, LogMessage string) {
 	// define Slack API
 	slack_api := slack.New("Bot token")
@@ -136,17 +141,19 @@ func slack_post(action, LogMessage string) {
 
 		_, err = f.WriteString(slack_success_prefix + channelID + timestamp)
 		error_func(err)
-	} 
+	}
 
 
 }
 
 func main() {
-	
+
 	// Build HTTP server
 	// Listen on root path, go to checkAuth function
 	http.HandleFunc("/", checkAuth)
-	
+
+	http.HandleFunc("/health-check", pong)
+
 	/*
 	Uncomment for HTTPS
 	err := http.ListenAndServeTLS(":31313", "server.crt", "server.key", nil)
