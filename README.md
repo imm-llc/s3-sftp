@@ -36,7 +36,21 @@ Posts to Slack when there are success or failures with the app.
 
 In Depth: 
 
-Coming soon but I want to go home today.
+The logging server is my first brush with Go so keep that in mind. The application formats a JSON containing an auth token ('Auth'), the status of the action ('Action'), and a more descriptive message ('LogMessage').
+
+The auth token is provided during the first run of the application, or if the credentials are cleared. There are no requirements for the auth token as far as length/complexity goes. They need to be stored server-side in whichever file you define. Do a search for "// Open allowed tokens file" in logging-server.go to find where you define this file location. I added this as a safeguard against, well, unauthorized use of the server.
+
+Once the server receives a properly authenticated JSON, it parses the JSON and formats a Slack message. In order for the Slack integration to work, you'll need to create a bot and add the bot token to the program. slack_api is the variable for the bot token.
+
+The Slack attachment color depends on if the value is 'Success' or 'Fail'. If there was a failure, the full error from the application should be sent to Slack. I wrote it this way to give a head start on user complaints.
+
+If there's a successful upload, you'll receive a message saying "Successfully upload to ". That way files don't sit un-actioned in S3. It also keeps you from having to check S3 to see if a new file was uploaded.
+
+I added an untested setup for TLS in the server. It might work, it might not. You can run a reverse proxy for encryption as well. The default port for logging-server is TCP/31313.
+
+I recommend compiling the program with go build and creating a service file for it.
+
+There is a built-in health check function for the Go server. By default, it's /health-check. This will return a simple "pong" in response to a GET request. There's no authorization on this endpoint.
 
 
 ### IAM Permissions
