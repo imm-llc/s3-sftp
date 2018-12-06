@@ -314,7 +314,7 @@ class sftpUI(QWidget):
                 # Set UPLOAD.BUCKET to whatever is currently selected in the dropdown
 
                 self.UPLOAD_BUCKET = str(self.BUCKET_LIST_BOX.currentText())
-                print(self.UPLOAD_BUCKET)
+                #print(self.UPLOAD_BUCKET)
                 # Try to list bucket contents
                 CHECK_BUCKET_CONNECTION = s3.Bucket(self.UPLOAD_BUCKET)
                 for item in CHECK_BUCKET_CONNECTION.objects.all():
