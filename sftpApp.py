@@ -26,6 +26,8 @@ MAIN_TOOLTIP = "BHI Born and Raised SFTP Program"
 UPLOAD_TOOLTIP = "Securely upload files to BHI\nShortcut: Cmd+U"
 QUIT_TOOLTIP = "Quit the program\nShortcut: Cmd+Q"
 CLEAR_CREDS_TOOLTIP = "Delete your SFTP credentials\nShortcut: Cmd+D"
+NEW_BUCKET_TOOLTIP = "Add another upload bucket"
+
 CREDS_PROMPT_TITLE = "BHI SFTP CREDENTIALS"
 AUTH_TOKEN_PROMPT = "Authorization Token"
 BUSINESS_UNIT = "BHI"
@@ -84,6 +86,7 @@ class sftpUI(QWidget):
             CREDS_FILE_EXISTS = os.path.isfile(KEYS_FILE)
             # credentials exist, go to main screen, we'll verify that they work later
             if CREDS_FILE_EXISTS:
+                # Need to make this a try block
                 with open(KEYS_FILE, "r") as KF:
                     JSON_AUTH_DATA = json.load(KF)
                     self.s3_access_key = JSON_AUTH_DATA['Access']
@@ -92,6 +95,12 @@ class sftpUI(QWidget):
                     self.AUTH_TOKEN = JSON_AUTH_DATA['AuthToken']
                     # Set default bucket
                     self.UPLOAD_BUCKET = JSON_AUTH_DATA['Bucket'][0]
+                    # Build empty list
+                    self.BUCKET_LIST = []
+                    self.ALL_BUCKETS = JSON_AUTH_DATA['Bucket']
+                    # Add buckets to list
+                    for BUCKET in self.ALL_BUCKETS:
+                        self.BUCKET_LIST.append(BUCKET)
                     KF.close()
                 pass
             # Credentials don't exist, go to pop up for access key
@@ -126,6 +135,13 @@ class sftpUI(QWidget):
 
             # Call function when Upload clicked
             UPLOAD_BUTTON.clicked.connect(self.uploadS3)
+
+            # Create Add New Bucket button
+            ADD_BUCKET = QPushButton('Add New Bucket', self)
+            ADD_BUCKET.setShortcut("Ctrl+N")
+            ADD_BUCKET.setToolTip(NEW_BUCKET_TOOLTIP)
+            ADD_BUCKET.resize(ADD_BUCKET.sizeHint())
+            ADD_BUCKET.clicked.connect(self.AddNewBucket)
             
 
             # Create clear credentials button
@@ -151,34 +167,38 @@ class sftpUI(QWidget):
             #palette = QPalette()
             #palette.setBrush(1, QBrush(scaled_image))
             #self.setPalette(palette)
+            # Build bucket list for dropdown
             self.BUCKET_LIST_BOX = QComboBox(self)
             if len(self.BUCKET_LIST) < 2:
                 self.UPLOAD_BUCKET = self.UPLOAD_BUCKET
                 self.BUCKET_LIST_BOX.addItem(self.UPLOAD_BUCKET)
-                self.GRID_WINDOW.addWidget(self.BUCKET_LIST_BOX, 3, 2)
+                self.GRID_WINDOW.addWidget(self.BUCKET_LIST_BOX, 3, 3)
             else:
                 for BUCKET in self.BUCKET_LIST:
                     self.BUCKET_LIST_BOX.addItem(BUCKET)
-                self.GRID_WINDOW.addWidget(self.BUCKET_LIST_BOX, 3, 2)
+                self.GRID_WINDOW.addWidget(self.BUCKET_LIST_BOX, 3, 3)
 
+
+            
+            
             # Create list of buttons for layout:
 
-            BUTTONS = [QUIT_BUTTON, CLEAR_CREDENTIALS, UPLOAD_BUTTON]
+            BUTTONS = [QUIT_BUTTON, CLEAR_CREDENTIALS, ADD_BUCKET, UPLOAD_BUTTON]
 
             # Create list of positions for buttons, x, y coordinates
             # If another button is needed, increment range 
-            BUTTON_POSITIONS = [(i,j) for i in range(3) for j in range(3)]
+            BUTTON_POSITIONS = [(i,j) for i in range(4) for j in range(4)]
 
             # Generate layout
             for BUTTON, POSITION in zip(BUTTONS, BUTTON_POSITIONS):
                 self.GRID_WINDOW.addWidget(BUTTON, *POSITION)
+            
             self.move(300, 150)
 
             # Create window
             self.show()
 
     def ConfirmQuit(self):
-        
         # Title of popup,  Message in text field, option 1, option 2, default
         confirmation = QMessageBox.question(self, "Message", "Are you sure you want to quit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if confirmation == QMessageBox.Yes:
@@ -186,6 +206,7 @@ class sftpUI(QWidget):
         else:
             # Quit this pop up
             QApplication.instance().quit
+    
     def GetAccessKey(self):
         # Create initial JSON for auth
         self.AUTH_JSON = {}
@@ -252,6 +273,28 @@ class sftpUI(QWidget):
         else:
             # They pressed ok but with no input, prompt again
             self.GetBucket()
+    
+    def AddNewBucket(self):
+        text, okPressed = QInputDialog.getText(self, CREDS_PROMPT_TITLE, "SFTP Bucket", QLineEdit.Normal, "")
+        NEW_BUCKET = str(text)
+        if okPressed and text != '':
+            with open(KEYS_FILE, "r") as KF:
+                UPDATED_JSON = json.load(KF)
+                KF.close()
+            UPDATED_JSON['Bucket'].append(NEW_BUCKET)
+            with open(KEYS_FILE, "w") as KF:
+                KF.write(json.dumps(UPDATED_JSON))
+                KF.close()
+            self.NotifyForRelaunch()
+
+            # Add alert telling them to relaunch App
+        elif not okPressed:
+            QApplication.instance().quit
+        else:
+            self.UI()
+
+            #with open(self.KEYS_FILE)
+
 
     def clearCredentials(self):
         confirmation = QMessageBox.question(self, "Confirmation", "Delete Credentials?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -262,62 +305,27 @@ class sftpUI(QWidget):
             # Quit this pop up
             QApplication.instance().quit
     def uploadS3(self):
-        
+
         try:
-            # Try to connect and list buckets.
+            # establish s3 var    
             s3 = boto3.resource('s3', aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key, region_name=self.s3_region)
 
-
             try:
-                # Try to list bucket contents
+                # Set UPLOAD.BUCKET to whatever is currently selected in the dropdown
+
                 self.UPLOAD_BUCKET = str(self.BUCKET_LIST_BOX.currentText())
-
+                print(self.UPLOAD_BUCKET)
+                # Try to list bucket contents
                 CHECK_BUCKET_CONNECTION = s3.Bucket(self.UPLOAD_BUCKET)
-
                 for item in CHECK_BUCKET_CONNECTION.objects.all():
                     with open(os.devnull, "w") as DEV:
                         DEV.write(str(item))
 
-                
                 # Create label verifying connection is OK
-                self.GRID_WINDOW.addWidget(QLabel("SFTP Connection to {} OK".format(self.UPLOAD_BUCKET)), 1, 1)
+                self.GRID_WINDOW.addWidget(QLabel("SFTP Connection to {} OK".format(self.UPLOAD_BUCKET)), 3, 1)
+                
                 # Call fileSelector function, pass s3 to make life easy
-            
-            # Create list for buckets that we'll use for a drop down list
-            #buckets = []
-            # Create dropdown list item
-            #self.BUCKET_LIST = QComboBox(self)
-            try:
-                # Try to list bucket contents
-                CHECK_BUCKET_CONNECTION = s3.Bucket(self.UPLOAD_BUCKET)
-                print(CHECK_BUCKET_CONNECTION)
-                print(CHECK_BUCKET_CONNECTION.objects.all())
-                #for item in F_BUCKET.objects.all():
-                    #print(item)
-                #self.UPLOAD_BUCKET.objects.all()
-
-                #for bucket in s3.buckets.all():
-                    # Put existing buckets in list
-                    #buckets.append(bucket.name)
-                    #self.BUCKET_LIST.addItem(bucket.name)
-                #print(buckets[0])
-                
-                # Create label verifying connection is OK
-                self.GRID_WINDOW.addWidget(QLabel("SFTP Connection to {} OK".format(self.UPLOAD_BUCKET)), 1, 1)
-
                 self.fileSelector(s3)
-                #self.GRID_WINDOW.addWidget(QLabel(self.UPLOAD_BUCKET), 1, 2)
-                # If there's only one bucket, UPLOAD_BUCKET is the first item in the list
-                """
-                commented out because we're getting bucket name explicitly
-                if len(buckets) == 1:
-                    self.UPLOAD_BUCKET = buckets[0]
-                    # 
-                    self.fileSelector
-                else:
-                    # 
-                    self.BUCKET_LIST.activated[str].connect(self.fileSelector)
-                """
 
             except botocore.exceptions.ClientError as e:
                 # Cast error to a string so we can look for the reason behind the error
@@ -325,7 +333,7 @@ class sftpUI(QWidget):
                 ERROR_MESSAGE = str(e)
                 self.GRID_WINDOW.addWidget(QLabel('SFTP Connection Failed'), 1, 1)
 
-                print(ERROR_MESSAGE)
+                #print(ERROR_MESSAGE)
                 if "InvalidAccessKeyId" in ERROR_MESSAGE:
                     # Define short error message
                     self.ERROR = "Invalid Access Key"
@@ -415,6 +423,7 @@ class sftpUI(QWidget):
                     ALERT_SUCCESS.setText("Successfully uploaded {} {} to {}".format(str(COUNT), FILE_PLURAL, BUSINESS_UNIT))
                     ALERT_SUCCESS.setWindowTitle(WINDOW_TITLE)
                     ALERT_SUCCESS.setStandardButtons(QMessageBox.Ok)
+                    
                     # Send log message first
                     try:
                         JSON_SUCCESS = {}
@@ -425,7 +434,9 @@ class sftpUI(QWidget):
                     except:
                         # If we can't send the error to the log endpoint, fail silently
                         continue
+                    
                     ALERT_SUCCESS.exec_()
+
                 # Generic exception, not sure what errors will be thrown here
                 except Exception as e:
                     FULL_ERROR = str(e)
@@ -441,7 +452,10 @@ class sftpUI(QWidget):
                         JSON_ERROR['Auth'] = self.AUTH_TOKEN # Set per client
                         JSON_ERROR['Action'] = "Fail"
                         JSON_ERROR['LogMessage'] = FULL_ERROR
+                        print(FULL_ERROR)
+                        print(LOG_FULL_URL)
                         requests.post(LOG_FULL_URL, data=json.dumps(JSON_ERROR))
+                        
                     except:
                         # If we can't send the error to the log endpoint, fail silently
                         pass
@@ -456,6 +470,8 @@ class sftpUI(QWidget):
         ALERT_CREDENTIALS.setDetailedText(self.FULL_ERROR)
         ALERT_CREDENTIALS.setWindowTitle(ERR_WINDOW_TITLE)
         ALERT_CREDENTIALS.setStandardButtons(QMessageBox.Ok)
+        
+        # Send log message first
         try:
             JSON_ERROR = {}
             JSON_ERROR['Auth'] = self.AUTH_TOKEN # Set per client
@@ -465,9 +481,19 @@ class sftpUI(QWidget):
         except:
             # If we can't send the error to the log endpoint, fail silently
             pass
+        
+        # Open alert popup
         ALERT_CREDENTIALS.exec_()
+    
+    def NotifyForRelaunch(self):
+        RELAUNCH_NOTIFICATION = QMessageBox()
+        RELAUNCH_NOTIFICATION.setIcon(QMessageBox.Information)
+        RELAUNCH_NOTIFICATION.setText("Please restart the application to use new bucket")
+        RELAUNCH_NOTIFICATION.setWindowTitle("New Bucket Added")
+        RELAUNCH_NOTIFICATION.setStandardButtons(QMessageBox.Ok)
+        RELAUNCH_NOTIFICATION.exec_()
         
-        
+
 if __name__ == '__main__':
     
     app = QApplication(sys.argv)
