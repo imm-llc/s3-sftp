@@ -36,11 +36,11 @@ Posts to Slack when there are success or failures with the app.
 
 In Depth: 
 
-The logging server is my first brush with Go so keep that in mind. The application formats a JSON containing an auth token ('Auth'), the status of the action ('Action'), and a more descriptive message ('LogMessage').
+The logging server is my first brush with Go so keep that in mind. The application accepts a JSON POST containing an auth token ('Auth'), the status of the action ('Action'), and a more descriptive message ('LogMessage'). It then uses the information in that JSON to form a Slack message. 
 
 The auth token is provided during the first run of the application, or if the credentials are cleared. There are no requirements for the auth token as far as length/complexity goes. They need to be stored server-side in whichever file you define. Do a search for "// Open allowed tokens file" in logging-server.go to find where you define this file location. I added this as a safeguard against, well, unauthorized use of the server.
 
-Once the server receives a properly authenticated JSON, it parses the JSON and formats a Slack message. In order for the Slack integration to work, you'll need to create a bot and add the bot token to the program. slack_api is the variable for the bot token.
+Once the server receives a JSON, it parses the JSON and verifies that it contains a valid auth token. Assuming the token is valid, Go formats and sends a Slack message. In order for the Slack integration to work, you'll need to create a bot and add the bot token to the program. `slack_api` is the variable for the bot token.
 
 The Slack attachment color depends on if the value is 'Success' or 'Fail'. If there was a failure, the full error from the application should be sent to Slack. I wrote it this way to give a head start on user complaints.
 
@@ -49,6 +49,22 @@ If there's a successful upload, you'll receive a message saying "Successfully up
 I added an untested setup for TLS in the server. It might work, it might not. You can run a reverse proxy for encryption as well. The default port for logging-server is TCP/31313.
 
 I recommend compiling the program with go build and creating a service file for it.
+
+*Sample Service file:*
+
+```
+[Unit]
+Description=Golang logging server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/var/www/go-log/go-log
+ExecStop=/bin/kill $(pgrep go-log)
+
+[Install]
+WantedBy=default.target
+```
 
 There is a built-in health check function for the Go server. By default, it's /health-check. This will return a simple "pong" in response to a GET request. There's no authorization on this endpoint.
 
